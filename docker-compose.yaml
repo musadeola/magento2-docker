@@ -1,0 +1,86 @@
+version: '2'
+
+services:
+  php-fpm:
+    image: magento/magento-cloud-docker-php:${PHP_FPM_TAG}
+    environment:
+      - MAGENTO_ROOT=/var/www/html
+      - PHP_MEMORY_LIMIT=64M
+    volumes_from:
+      - app-volumes
+    depends_on:
+      - mysql
+      - redis
+
+  nginx:
+    image: magento/magento-cloud-docker-nginx:${NGINX_TAG}
+    environment:
+      - FPM_HOST=php-fpm
+      - MAGENTO_ROOT=/var/www/html
+      - MAGENTO_RUN_MODE=${MAGE_MODE}
+    ports:
+      - 8080:80
+    volumes_from:
+      - app-volumes
+    depends_on:
+      - php-fpm
+
+  mysql:
+    image: mysql:${MYSQL_TAG}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  mysql-cli:
+    image: mysql:${MYSQL_TAG}
+    entrypoint: "mysql -hmysql -uroot -p${MYSQL_ROOT_PASSWORD}"
+    depends_on:
+      - mysql
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+    depends_on:
+      - mysql
+
+  redis:
+    image: redis:${REDIS_TAG}
+
+  redis-cli:
+    image: redis:${REDIS_TAG}
+    entrypoint: "redis-cli -h redis -p 6379"
+    depends_on:
+      - redis
+
+  composer:
+    image: composer:${COMPOSER_TAG}
+    working_dir: /var/www/html
+    volumes_from:
+      - app-volumes
+    volumes:
+      - composer-tmp:/tmp
+
+  php-cli:
+    image: magento/magento-cloud-docker-php:${PHP_CLI_TAG}
+    working_dir: /var/www/html
+    environment:
+      - MAGENTO_ROOT=/var/www/html
+      - MAGE_MODE=${MAGE_MODE}
+      - PHP_MEMORY_LIMIT=2G
+    volumes_from:
+      - app-volumes
+    depends_on:
+      - mysql
+      - redis
+
+  app-volumes:
+    image: tianon/true
+    volumes:
+      - .:/var/www/html
+
+volumes:
+  composer-tmp:
+  mysql-data:

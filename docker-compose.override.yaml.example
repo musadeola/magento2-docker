@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+  app-volumes:
+    image: tianon/true
+    volumes:
+      - .:/var/www/html
+      - app-generated:/var/www/html/generated
+      - app-vendor:/var/www/html/vendor
+      - app-var:/var/www/html/var
+      - ./var/log:/var/www/html/var/log
+      - ./var/report:/var/www/html/var/report
+
+volumes:
+  app-vendor:
+  app-generated:
+  app-var:
